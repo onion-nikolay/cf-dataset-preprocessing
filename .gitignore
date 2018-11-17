@@ -114,6 +114,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# Data folders
+# Data folders and temp .py files
 input/
 output/
+info/
+temp.py
