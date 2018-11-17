@@ -3,9 +3,45 @@ import numpy as np
 import os
 
 
+def dummy_resize(img, size):
+    _sz = np.shape(img)[:-1]
+    field = np.zeros((max(_sz), max(_sz), 3), dtype=np.uint8)
+    if _sz[0] > _sz[1]:
+        field[:, (_sz[0]-_sz[1])//2:(_sz[0]+_sz[1])//2+(_sz[1] % 2), :] = img
+    else:
+        field[(_sz[1]-_sz[0])//2:(_sz[1]+_sz[0])//2+(_sz[0] % 2), :, :] = img
+    return resize(field, size)
+
+
 def is_image(name):
     image_formats = ['jpg', 'png', 'tif', 'bmp']
     return os.path.splitext(name)[1][1:].lower() in image_formats
+
+
+def put_on_color_field(images, background):
+    shape = np.shape(images[0])
+    if background == 'black':
+        field = np.zeros(shape, dtype=np.uint8)
+    elif background == 'white':
+        field = 255*np.ones(shape, dtype=np.uint8)
+    elif background == 'gray':
+        field_color = np.mean([np.mean(img[img != 0]) for img in images])
+        field = field_color * np.ones(shape, dtype=np.uint8)
+    else:
+        raise NameError('incorrect background name!')
+    result = []
+#    print(np.mean(field))
+    for img in images:
+        img[img < 3] = field[img < 3]
+        result.append(np.uint8(img))
+    return result
+
+
+def put_on_square_field(img, field_size, x0, y0, size):
+    result = np.zeros((field_size, field_size, 3), dtype=np.uint8)
+    resized_img = cv.resize(img, (size, size))
+    result[x0:x0+size, y0:y0+size] = resized_img
+    return result
 
 
 def read_images(path):
@@ -20,16 +56,6 @@ def read_one_image(path, name):
 
 def read_images_names(path):
     return np.sort([name for name in os.listdir(path) if is_image(name)])
-
-
-def save_images(path, images, names):
-    [cv.imwrite(os.path.join(path, nm), img) for nm, img in zip(names, images)]
-    return 0
-
-
-def save_one_image(path, image, name):
-    cv.imwrite(os.path.join(path, name), image)
-    return 0
 
 
 def remove_chromakey(img, sens=35, chanel_to_remove='green'):
@@ -53,22 +79,15 @@ def remove_chromakey(img, sens=35, chanel_to_remove='green'):
     return result
 
 
-def put_on_square_field(img, field_size, x0, y0, size):
-    result = np.zeros((field_size, field_size, 3), dtype=np.uint8)
-    resized_img = cv.resize(img, (size, size))
-    result[x0:x0+size, y0:y0+size] = resized_img
-    return result
-
-
 def resize(img, size):
     return cv.resize(img, (size, size), interpolation=cv.INTER_CUBIC)
 
 
-def dummy_resize(img, size):
-    _sz = np.shape(img)[:-1]
-    field = np.zeros((max(_sz), max(_sz), 3), dtype=np.uint8)
-    if _sz[0] > _sz[1]:
-        field[:, (_sz[0]-_sz[1])//2:(_sz[0]+_sz[1])//2+(_sz[1] % 2), :] = img
-    else:
-        field[(_sz[1]-_sz[0])//2:(_sz[1]+_sz[0])//2+(_sz[0] % 2), :, :] = img
-    return resize(field, size)
+def save_images(path, images, names):
+    [cv.imwrite(os.path.join(path, nm), img) for nm, img in zip(names, images)]
+    return 0
+
+
+def save_one_image(path, image, name):
+    cv.imwrite(os.path.join(path, name), image)
+    return 0
