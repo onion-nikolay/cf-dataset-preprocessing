@@ -16,8 +16,8 @@ def read_config():
                 *config['SETTINGS']['photo_folder'].split('\\'))
     cfg['render_folder'] = os.path.join(
                 *config['SETTINGS']['render_folder'].split('\\'))
-    cfg['save_all'] = config['SETTINGS']['save_all']
-    cfg['by_one'] = config['SETTINGS']['by_one']
+    cfg['save_all'] = int(config['SETTINGS']['save_all'])
+    cfg['by_one'] = int(config['SETTINGS']['by_one'])
     return cfg
 
 
@@ -26,35 +26,6 @@ def save_images_where_necessary(trig, folder, step, images, names):
         [cv.imwrite(os.path.join(folder, 'step_{}'.format(step), nm), img)
          for img, nm in zip(images, names)]
     return 0
-
-
-def select_square(img0, return_params=False):
-    img_size = np.shape(img0)[:-1]
-    max_size = max(img_size)
-    img = np.zeros((max_size, max_size, 3), dtype=np.uint8)
-    img[max_size // 2 - img_size[0] // 2:
-        max_size // 2 + img_size[0] // 2 + img_size[0] % 2,
-        max_size // 2 - img_size[1] // 2:
-        max_size // 2 + img_size[1] // 2 + img_size[1] % 2] = img0
-    mask = cv.medianBlur(img[:, :, 0], 5) != 0
-    minmax = np.argwhere(mask == 1)
-    x_min, y_min = np.min(minmax, axis=0)
-    x_max, y_max = np.max(minmax, axis=0)
-    sz = [x_max-x_min, y_max-y_min]
-#    Info: will be removed soon
-#    print(x_min, x_max, y_min, y_max, sz)
-    if sz[0] > sz[1]:
-        x0 = x_min
-        y0 = y_min-(sz[0]-y_max+y_min)//2
-        _size = sz[0]
-    else:
-        x0 = x_min-(sz[1]-x_max+x_min)//2
-        y0 = y_min
-        _size = sz[1]
-    if return_params:
-        return {'x0': x0, 'y0': y0, 'size': _size}
-    else:
-        return img[x0:x0+_size, y0:y0+_size, :]
 
 
 #def session():
@@ -95,6 +66,35 @@ def select_square(img0, return_params=False):
 #    IP.save_images(os.path.join(new_folder, 'grayscale'), images_grayscale,
 #                   names)
 #    return 0
+
+
+def select_square(img0, return_params=False):
+    img_size = np.shape(img0)[:-1]
+    max_size = max(img_size)
+    img = np.zeros((max_size, max_size, 3), dtype=np.uint8)
+    img[max_size // 2 - img_size[0] // 2:
+        max_size // 2 + img_size[0] // 2 + img_size[0] % 2,
+        max_size // 2 - img_size[1] // 2:
+        max_size // 2 + img_size[1] // 2 + img_size[1] % 2] = img0
+    mask = cv.medianBlur(img[:, :, 0], 5) != 0
+    minmax = np.argwhere(mask == 1)
+    x_min, y_min = np.min(minmax, axis=0)
+    x_max, y_max = np.max(minmax, axis=0)
+    sz = [x_max-x_min, y_max-y_min]
+#    Info: will be removed soon
+#    print(x_min, x_max, y_min, y_max, sz)
+    if sz[0] > sz[1]:
+        x0 = x_min
+        y0 = y_min-(sz[0]-y_max+y_min)//2
+        _size = sz[0]
+    else:
+        x0 = x_min-(sz[1]-x_max+x_min)//2
+        y0 = y_min
+        _size = sz[1]
+    if return_params:
+        return {'x0': x0, 'y0': y0, 'size': _size}
+    else:
+        return img[x0:x0+_size, y0:y0+_size, :]
 
 
 def session():
@@ -148,6 +148,7 @@ def session():
         images = [IP.dummy_resize(img) for img in images]
         save_images_where_necessary(cfg['save_all'], new_folder, 2, images,
                                     names)
+        # Final result
         images_grayscale = [cv.cvtColor(img, cv.COLOR_BGR2GRAY) for img in
                             images]
         IP.save_images(os.path.join(new_folder, 'color'), images, names)
