@@ -9,13 +9,26 @@ def is_image(name):
 
 
 def read_images(path):
-    names = [name for name in os.listdir(path) if is_image(name)]
-    images = [cv.imread(path+'\\'+name) for name in names]
+    names = np.sort([name for name in os.listdir(path) if is_image(name)])
+    images = [cv.imread(os.path.join(path, name)) for name in names]
     return images, names
 
 
+def read_one_image(path, name):
+    return cv.imread(os.path.join(path, name))
+
+
+def read_images_names(path):
+    return np.sort([name for name in os.listdir(path) if is_image(name)])
+
+
 def save_images(path, images, names):
-    [cv.imwrite(path+'\\'+nm, img) for nm, img in zip(names, images)]
+    [cv.imwrite(os.path.join(path, nm), img) for nm, img in zip(names, images)]
+    return 0
+
+
+def save_one_image(path, image, name):
+    cv.imwrite(os.path.join(path, name), image)
     return 0
 
 
@@ -23,6 +36,7 @@ def remove_chromakey(img, sens=35, chanel_to_remove='green'):
     reds = img[:, :, 2]
     greens = img[:, :, 1]
     blues = img[:, :, 0]
+    # Refactoring in future
     if chanel_to_remove == 'green':
         mask = (greens < sens) | (reds > greens) | (blues > greens)
     elif chanel_to_remove == 'blue':
@@ -48,3 +62,13 @@ def put_on_square_field(img, field_size, x0, y0, size):
 
 def resize(img, size):
     return cv.resize(img, (size, size), interpolation=cv.INTER_CUBIC)
+
+
+def dummy_resize(img, size):
+    _sz = np.shape(img)[:-1]
+    field = np.zeros((max(_sz), max(_sz), 3), dtype=np.uint8)
+    if _sz[0] > _sz[1]:
+        field[:, (_sz[0]-_sz[1])//2:(_sz[0]+_sz[1])//2+(_sz[1] % 2), :] = img
+    else:
+        field[(_sz[1]-_sz[0])//2:(_sz[1]+_sz[0])//2+(_sz[0] % 2), :, :] = img
+    return resize(field, size)
