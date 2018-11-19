@@ -118,4 +118,4 @@ dmypy.json
 input/
 output/
 info/
-temp.py
+temp*.py

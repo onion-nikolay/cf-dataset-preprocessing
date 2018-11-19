@@ -91,3 +91,32 @@ def save_images(path, images, names):
 def save_one_image(path, image, name):
     cv.imwrite(os.path.join(path, name), image)
     return 0
+
+
+def select_square(img0, return_params=False):
+    img_size = np.shape(img0)[:-1]
+    max_size = max(img_size)
+    img = np.zeros((max_size, max_size, 3), dtype=np.uint8)
+    img[max_size // 2 - img_size[0] // 2:
+        max_size // 2 + img_size[0] // 2 + img_size[0] % 2,
+        max_size // 2 - img_size[1] // 2:
+        max_size // 2 + img_size[1] // 2 + img_size[1] % 2] = img0
+    mask = cv.medianBlur(img[:, :, 0], 3) > 15
+    minmax = np.argwhere(mask == 1)
+    x_min, y_min = np.min(minmax, axis=0)
+    x_max, y_max = np.max(minmax, axis=0)
+    sz = [x_max-x_min, y_max-y_min]
+#    Info: will be removed soon
+#    print(x_min, x_max, y_min, y_max, sz)
+    if sz[0] > sz[1]:
+        x0 = x_min
+        y0 = y_min-(sz[0]-y_max+y_min)//2
+        _size = sz[0]
+    else:
+        x0 = x_min-(sz[1]-x_max+x_min)//2
+        y0 = y_min
+        _size = sz[1]
+    if return_params:
+        return {'x0': x0, 'y0': y0, 'size': _size}
+    else:
+        return img[x0:x0+_size, y0:y0+_size, :]
